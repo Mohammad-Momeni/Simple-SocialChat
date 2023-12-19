@@ -48,19 +48,28 @@ def clientThread(connectionSocket, addr):
                 break
             elif sentence in ['&available', '&busy']:
                 users[credentials[0]][1] = sentence[1:]
-            elif sentence[0] == '&':
-                sentence = sentence[1:].split('&')
+            else:
+                sentence = sentence.split('&')
                 if sentence[0] == 'public':
                     publicMessages.append(credentials[0] + ': ' + sentence[1] + '&public')
                     for user in users:
-                        users[user].send((credentials[0] + ': ' + sentence[1] + '&public').encode())
+                        if users[user][1] == 'available':
+                            users[user][0].send((credentials[0] + ': ' + sentence[1] + '&public').encode())
                 elif sentence[0] == 'all':
                     for user in users:
-                        users[user].send((credentials[0] + ': ' + sentence[1] + '&public').encode())
-                else:
-                    if sentence[0] in users:
-                        users[sentence[0]].send((credentials[0] + ': ' + sentence[1] + '&private').encode())
-                        users[credentials[0]].send((credentials[0] + ':' + sentence[0] + ':' + sentence[1] + '&private').encode())
+                        if users[user][1] == 'available':
+                            users[user][0].send((credentials[0] + ': ' + sentence[1] + '&public').encode())
+                elif sentence[0] == 'private':
+                    # Needs availability check
+                    if sentence[1] in users and users[sentence[1]][1] == 'available':
+                        users[sentence[1]][0].send((credentials[0] + ': ' + sentence[2] + '&private').encode())
+                        users[credentials[0]][0].send((credentials[0] + ':' + sentence[1] + ':' + sentence[2] + '&private').encode())
+                elif sentence[0] == 'group':
+                    # Needs availability check
+                    for user in sentence[1].split(','):
+                        if user in users and users[user][1] == 'available':
+                            users[user][0].send((credentials[0] + ':' + sentence[2] + '&group').encode())
+                    users[credentials[0]][0].send((credentials[0] + ':' + sentence[2] + '&group').encode())
         except:
             break
     del users[credentials[0]]

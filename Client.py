@@ -49,6 +49,11 @@ def addMessage(message):
             messages.append('You to ' + message[0].split(':')[1] + ': ' + message[0].split(':')[2])
         else:
             messages.append('Private message from ' + message[0])
+    elif message[1] == 'group':
+        if message[0].split(':')[0] == username:
+            messages.append('You to group: ' + message[0].split(':')[1])
+        else:
+            messages.append('Group message from ' + message[0].split(':')[0] + ': ' + message[0].split(':')[1])
 def getMessages():
     while True:
         try:
@@ -137,20 +142,23 @@ while True:
                     getOnlineUsers()
                     continue
                 elif action == 1:
-                    state = 'Enter 1 to send to all, 2 to send to specific user:'
-                    action = getInput(state + '\n', [1, 2])
+                    state = 'Enter 1 to send to all, 2 to send to a specific user, 3 to send to a group of people:'
+                    action = getInput(state + '\n', [1, 2, 3])
                     state = 'Enter message:'
                     message = input(state + '\n')
                     if action == 2:
                         state = 'Enter username:'
-                        message = '&' + input(state + '\n') + '&' + message
+                        message = 'private&' + input(state + '\n') + '&' + message
+                    elif action == 3:
+                        state = 'Enter usernames seperated by comma:'
+                        message = 'group&' + input(state + '\n') + '&' + message
                     else:
                         state = 'Do you want people who join later to see this message? Enter 1 for yes, 2 for no:'
                         action = getInput(state + '\n', [1, 2])
                         if action == 1:
-                            message = '&public&' + message
+                            message = 'public&' + message
                         else:
-                            message = '&all&' + message
+                            message = 'all&' + message
                     clientSocket.send(message.encode())
             t.join()
             clientSocket.close()
