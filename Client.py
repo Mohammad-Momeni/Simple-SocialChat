@@ -64,6 +64,7 @@ def getMessages():
 state = ''
 messages = []
 username = ''
+status = ''
 while True:
     action = getInput('Enter 1 to connect to server, 2 to get online users, 3 to exit:\n', [1, 2, 3])
     if action == 3:
@@ -76,8 +77,8 @@ while True:
         clientSocket = socket(AF_INET, SOCK_STREAM)
         username = input('Enter your username:\n')
         password = input('Enter your password:\n')
-        status = getInput('Choose status:\n1)Available\n2)Busy\n', [1, 2])
-        if status == 1:
+        action = getInput('Choose status:\n1)Available\n2)Busy\n', [1, 2])
+        if action == 1:
             status = 'available'
         else:
             status = 'busy'
@@ -113,18 +114,25 @@ while True:
             t = Thread(target=getMessages)
             t.start()
             while True:
-                state = 'Enter 1 to send message, 2 to get online users, 3 to change your status, 4 to close connection:'
-                action = getInput(state + '\n', [1, 2, 3, 4])
+                if status == 'available':
+                    state = 'Enter 1 to send message, 2 to get online users, 3 to change your status, 4 to close connection:'
+                    action = getInput(state + '\n', [1, 2, 3, 4])
+                else:
+                    state = 'Enter 1 to get online users, 2 to change your status, 3 to close connection:'
+                    action = getInput(state + '\n', [1, 2, 3])
+                    action += 1
                 if action == 4:
                     clientSocket.send('&exit'.encode())
                     break
                 elif action == 3:
-                    status = getInput('Choose status:\n1)Available\n2)Busy\n', [1, 2])
-                    if status == 1:
+                    action = getInput('Choose status:\n1)Available\n2)Busy\n', [1, 2])
+                    if action == 1:
                         status = '&available'
                     else:
                         status = '&busy'
                     clientSocket.send(status.encode())
+                    status = status[1:]
+                    continue
                 elif action == 2:
                     getOnlineUsers()
                     continue
