@@ -1,6 +1,7 @@
 from socket import *
 from threading import Thread
 import os
+import time
 
 def getOnlineUsers():
     serverName = 'localhost'
@@ -41,19 +42,19 @@ def printMessages():
 def addMessage(message):
     if message[1] == 'public':
         if message[0].split(':')[0] == username:
-            messages.append('You:' + message[0].split(':')[1])
+            messages.append('You:' + message[0].split(':')[1] + '\t\ttime: ' + message[0].split(':')[2])
         else:
-            messages.append(message[0])
+            messages.append(message[0].split(':')[0] + ':' + message[0].split(':')[1] + '\t\ttime: ' + message[0].split(':')[2])
     elif message[1] == 'private':
         if message[0].split(':')[0] == username:
-            messages.append('You to ' + message[0].split(':')[1] + ': ' + message[0].split(':')[2])
+            messages.append('You to ' + message[0].split(':')[1] + ': ' + message[0].split(':')[2] + '\t\ttime: ' + message[0].split(':')[3])
         else:
-            messages.append('Private message from ' + message[0])
+            messages.append('Private message from ' + message[0].split(':')[0] + ': ' + message[0].split(':')[2] + '\t\ttime: ' + message[0].split(':')[3])
     elif message[1] == 'group':
         if message[0].split(':')[0] == username:
-            messages.append('You to group: ' + message[0].split(':')[1])
+            messages.append('You to group: ' + message[0].split(':')[1] + '\t\ttime: ' + message[0].split(':')[2])
         else:
-            messages.append('Group message from ' + message[0].split(':')[0] + ': ' + message[0].split(':')[1])
+            messages.append('Group message from ' + message[0].split(':')[0] + ': ' + message[0].split(':')[1] + '\t\ttime: ' + message[0].split(':')[2])
 def getMessages():
     while True:
         try:
@@ -159,6 +160,11 @@ while True:
                             message = 'public&' + message
                         else:
                             message = 'all&' + message
+                    hour = time.localtime().tm_hour
+                    if hour < 10:
+                        message = message + '&' + '0' + str(hour)
+                    else:
+                        message = message + '&' + str(hour)
                     clientSocket.send(message.encode())
             t.join()
             clientSocket.close()
