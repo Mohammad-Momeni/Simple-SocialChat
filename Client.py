@@ -77,6 +77,10 @@ while True:
         username = input('Enter your username:\n')
         password = input('Enter your password:\n')
         status = getInput('Choose status:\n1)Available\n2)Busy\n', [1, 2])
+        if status == 1:
+            status = 'available'
+        else:
+            status = 'busy'
         credentials = username + '\0' + password + '\0' + status
         try:
             clientSocket.connect((serverName, serverPort))
@@ -85,7 +89,11 @@ while True:
                 message = clientSocket.recv(1024)
                 message = message.decode()
                 if message == '&wrongPassword':
-                    print('Wrong Password\n')
+                    print('Wrong Password')
+                    clientSocket.close()
+                    continue
+                elif message == '&online':
+                    print('Username is already Online')
                     clientSocket.close()
                     continue
                 else:

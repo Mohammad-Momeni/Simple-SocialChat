@@ -17,38 +17,29 @@ def clientThread(connectionSocket, addr):
     if credentials[0] in credentialsData.keys():
         if hashedPassword == credentialsData[credentials[0]]:
             if credentials[0] in users.keys():
-                # Welcome
-                pass
+                connectionSocket.send('&online'.encode())
+                connectionSocket.close()
+                return
+            else:
+                users[credentials[0]] = [connectionSocket, credentials[2]]
+                if len(publicMessages) > 0:
+                    connectionSocket.send(messagesToString(publicMessages).encode())
+                else:
+                    connectionSocket.send('&accepted'.encode())
         else:
             connectionSocket.send('&wrongPassword'.encode())
             connectionSocket.close()
             return
     else:
         credentialsData[credentials[0]] = hashedPassword
-
-
-
-    if credentials[0] in users.keys():
-        if users[credentials[0]][0] == credentials[1]:
-            if users[credentials[0]][1] == 'offline':
-                users[credentials[0]][1] = 'online'
-                if len(publicMessages) > 0:
-                    connectionSocket.send(messagesToString(publicMessages).encode())
-                else:
-                    connectionSocket.send('&accepted'.encode())
-                return
-            connectionSocket.send(messagesToString(publicMessages).encode())
-            users[credentials[0]] = connectionSocket
-            return
-        connectionSocket.send('&taken'.encode())
-        connectionSocket.close()
-        return
-    else:
+        users[credentials[0]] = [connectionSocket, credentials[2]]
+        with open('credentials.csv', mode='a') as f:
+            writer = csv.writer(f, lineterminator='\n')
+            writer.writerow([credentials[0], hashedPassword])
         if len(publicMessages) > 0:
             connectionSocket.send(messagesToString(publicMessages).encode())
         else:
             connectionSocket.send('&accepted'.encode())
-    users[username] = connectionSocket
     while True:
         try:
             sentence = connectionSocket.recv(1024).decode()
@@ -58,19 +49,19 @@ def clientThread(connectionSocket, addr):
             elif sentence[0] == '&':
                 sentence = sentence[1:].split('&')
                 if sentence[0] == 'public':
-                    publicMessages.append(username + ': ' + sentence[1] + '&public')
+                    publicMessages.append(credentials[0] + ': ' + sentence[1] + '&public')
                     for user in users:
-                        users[user].send((username + ': ' + sentence[1] + '&public').encode())
+                        users[user].send((credentials[0] + ': ' + sentence[1] + '&public').encode())
                 elif sentence[0] == 'all':
                     for user in users:
-                        users[user].send((username + ': ' + sentence[1] + '&public').encode())
+                        users[user].send((credentials[0] + ': ' + sentence[1] + '&public').encode())
                 else:
                     if sentence[0] in users:
-                        users[sentence[0]].send((username + ': ' + sentence[1] + '&private').encode())
-                        users[username].send((username + ':' + sentence[0] + ':' + sentence[1] + '&private').encode())
+                        users[sentence[0]].send((credentials[0] + ': ' + sentence[1] + '&private').encode())
+                        users[credentials[0]].send((credentials[0] + ':' + sentence[0] + ':' + sentence[1] + '&private').encode())
         except:
             break
-    del users[username]
+    del users[credentials[0]]
     connectionSocket.close()
     return
 
@@ -89,8 +80,8 @@ def getOnlineUsers():
         if message.decode() == 'users':
             UDPServerSocket.sendto(usersToString().encode(), addr)
 
-with open('credentials.csv', mode='r') as infile:
-    reader = csv.reader(infile)
+with open('credentials.csv', mode='r') as f:
+    reader = csv.reader(f)
     credentialsData = {rows[0] : rows[1] for rows in reader}
 
 users = {}
