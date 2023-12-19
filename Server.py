@@ -46,6 +46,8 @@ def clientThread(connectionSocket, addr):
             if sentence == '&exit':
                 connectionSocket.send('&exit'.encode())
                 break
+            elif sentence in ['&available', '&busy']:
+                users[credentials[0]][1] = sentence[1:]
             elif sentence[0] == '&':
                 sentence = sentence[1:].split('&')
                 if sentence[0] == 'public':

@@ -113,11 +113,18 @@ while True:
             t = Thread(target=getMessages)
             t.start()
             while True:
-                state = 'Enter 1 to send message, 2 to get online users, 3 to close connection:'
-                action = getInput(state + '\n', [1, 2, 3])
-                if action == 3:
+                state = 'Enter 1 to send message, 2 to get online users, 3 to change your status, 4 to close connection:'
+                action = getInput(state + '\n', [1, 2, 3, 4])
+                if action == 4:
                     clientSocket.send('&exit'.encode())
                     break
+                elif action == 3:
+                    status = getInput('Choose status:\n1)Available\n2)Busy\n', [1, 2])
+                    if status == 1:
+                        status = '&available'
+                    else:
+                        status = '&busy'
+                    clientSocket.send(status.encode())
                 elif action == 2:
                     getOnlineUsers()
                     continue
