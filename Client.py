@@ -65,6 +65,9 @@ def getMessages():
             elif message[1] == 'userBusy':
                 print('User is busy')
                 continue
+            elif message[1] == 'userNotFound':
+                print('User not found')
+                continue
             addMessage(message)
             printMessages()
         except:
