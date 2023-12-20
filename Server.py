@@ -22,10 +22,11 @@ def clientThread(connectionSocket, addr):
                 return
             else:
                 users[credentials[0]] = [connectionSocket, credentials[2]]
-                if len(publicMessages) > 0:
-                    connectionSocket.send(messagesToString(publicMessages).encode())
-                else:
+                if credentials[0] not in messages.keys():
+                    messages[credentials[0]] = []
                     connectionSocket.send('&accepted'.encode())
+                else:
+                    connectionSocket.send(messagesToString(messages[credentials[0]]).encode())
         else:
             connectionSocket.send('&wrongPassword'.encode())
             connectionSocket.close()
@@ -38,6 +39,7 @@ def clientThread(connectionSocket, addr):
             writer.writerow([credentials[0], hashedPassword])
         if len(publicMessages) > 0:
             connectionSocket.send(messagesToString(publicMessages).encode())
+            messages[credentials[0]] = publicMessages
         else:
             connectionSocket.send('&accepted'.encode())
     while True:
@@ -52,28 +54,44 @@ def clientThread(connectionSocket, addr):
                 sentence = sentence.split('&')
                 if sentence[0] == 'public':
                     publicMessages.append(credentials[0] + ': ' + sentence[1] + ':' + sentence[2] + '&public')
+                    for user in credentialsData:
+                        if user not in messages.keys():
+                            messages[user] = []
+                        messages[user].append(credentials[0] + ': ' + sentence[1] + ':' + sentence[2] + '&public')
                     for user in users:
                         if users[user][1] == 'available':
                             users[user][0].send((credentials[0] + ': ' + sentence[1] + ':' + sentence[2] + '&public').encode())
                 elif sentence[0] == 'all':
                     for user in users:
                         if users[user][1] == 'available':
+                            messages[user].append(credentials[0] + ': ' + sentence[1] + ':' + sentence[2] + '&public')
                             users[user][0].send((credentials[0] + ': ' + sentence[1] + ':' + sentence[2] + '&public').encode())
                 elif sentence[0] == 'private':
                     if sentence[1] in users and users[sentence[1]][1] == 'available':
-                        users[sentence[1]][0].send((credentials[0] + ': ' + sentence[2] + ':' + sentence[3] + '&private').encode())
+                        messages[sentence[1]].append(credentials[0] + ':' + sentence[1] + ':' + sentence[2] + ':' + sentence[3] + '&private')
+                        messages[credentials[0]].append(credentials[0] + ':' + sentence[1] + ':' + sentence[2] + ':' + sentence[3] + '&private')
+                        users[sentence[1]][0].send((credentials[0] + ':' + sentence[1] + ':' + sentence[2] + ':' + sentence[3] + '&private').encode())
                         users[credentials[0]][0].send((credentials[0] + ':' + sentence[1] + ':' + sentence[2] + ':' + sentence[3] + '&private').encode())
                     elif sentence[1] in users:
                         users[credentials[0]][0].send('&userBusy'.encode())
                 elif sentence[0] == 'group':
                     for user in sentence[1].split(','):
                         if user in users and users[user][1] == 'available':
+                            messages[user].append(credentials[0] + ': ' + sentence[2] + ':' + sentence[3] + '&group')
                             users[user][0].send((credentials[0] + ':' + sentence[2] + ':' + sentence[3] + '&group').encode())
                     users[credentials[0]][0].send((credentials[0] + ':' + sentence[2] + ':' + sentence[3] + '&group').encode())
+                    messages[credentials[0]].append(credentials[0] + ': ' + sentence[2] + ':' + sentence[3] + '&group')
         except:
             break
     del users[credentials[0]]
     connectionSocket.close()
+    with open('messages.csv', mode='w') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        for user in messages:
+            writer.writerow([user] + messages[user])
+    with open('publicMessages.csv', mode='w') as f:
+        writer = csv.writer(f, lineterminator='\n')
+        writer.writerow(publicMessages)
     return
 
 def usersToString():
@@ -95,8 +113,21 @@ with open('credentials.csv', mode='r') as f:
     reader = csv.reader(f)
     credentialsData = {rows[0] : rows[1] for rows in reader}
 
+with open('messages.csv', mode='r') as f:
+    reader = csv.reader(f)
+    messages = {}
+    for row in reader:
+        messages[row[0]] = []
+        for i in range(1, len(row)):
+            messages[row[0]].append(row[i])
+
+with open('publicMessages.csv', mode='r') as f:
+    reader = csv.reader(f)
+    publicMessages = []
+    for row in reader:
+        publicMessages.append(row)
+
 users = {}
-publicMessages = []
 serverName = 'localhost'
 serverPort = 12000
 serverSocket = socket(AF_INET, SOCK_STREAM)
@@ -111,4 +142,3 @@ while True:
     connectionSocket, addr = serverSocket.accept()
     t = Thread(target=clientThread, args=(connectionSocket, addr, ))
     t.start()
-    
