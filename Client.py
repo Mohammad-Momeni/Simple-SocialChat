@@ -62,6 +62,9 @@ def getMessages():
             message = message.decode().split('&')
             if message[1] == 'exit':
                 return
+            elif message[1] == 'userBusy':
+                print('User is busy')
+                continue
             addMessage(message)
             printMessages()
         except:

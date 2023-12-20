@@ -60,12 +60,12 @@ def clientThread(connectionSocket, addr):
                         if users[user][1] == 'available':
                             users[user][0].send((credentials[0] + ': ' + sentence[1] + ':' + sentence[2] + '&public').encode())
                 elif sentence[0] == 'private':
-                    # Needs availability check
                     if sentence[1] in users and users[sentence[1]][1] == 'available':
                         users[sentence[1]][0].send((credentials[0] + ': ' + sentence[2] + ':' + sentence[3] + '&private').encode())
                         users[credentials[0]][0].send((credentials[0] + ':' + sentence[1] + ':' + sentence[2] + ':' + sentence[3] + '&private').encode())
+                    elif sentence[1] in users:
+                        users[credentials[0]][0].send('&userBusy'.encode())
                 elif sentence[0] == 'group':
-                    # Needs availability check
                     for user in sentence[1].split(','):
                         if user in users and users[user][1] == 'available':
                             users[user][0].send((credentials[0] + ':' + sentence[2] + ':' + sentence[3] + '&group').encode())
